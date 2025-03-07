@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server"
 
 const locales = ["en", "pt", "es"]
 const defaultLocale = "pt"
-const allowedOrigins = ['http://localhost:5173']
+const allowedOrigins = process.env.ALLOWED_ORIGINS
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -13,7 +13,7 @@ export function middleware(request: NextRequest) {
   let response = NextResponse.next()
 
   // Aplicar CORS apenas para origens permitidas
-  if (allowedOrigins.includes(origin)) {
+  if (allowedOrigins && allowedOrigins.includes(origin)) {
     response.headers.set('Access-Control-Allow-Origin', origin)
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
     response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-CSRF-Token')
