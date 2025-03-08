@@ -2,7 +2,20 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { PlusCircle, Search, Trash2, Download, Upload, X, Check, Edit, Globe, ChevronDown, Wand2 } from "lucide-react"
+import {
+  PlusCircle,
+  Search,
+  Trash2,
+  Download,
+  Upload,
+  X,
+  Check,
+  Edit,
+  Globe,
+  ChevronDown,
+  Wand2,
+  LogOut,
+} from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -64,6 +77,28 @@ export default function TranslationManager() {
       toast({
         title: "Erro",
         description: "Falha ao carregar traduções",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleLogout = async () => {
+    try {
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+      })
+
+      if (!response.ok) {
+        throw new Error("Falha ao fazer logout")
+      }
+
+      router.push("/login")
+      router.refresh()
+    } catch (error) {
+      console.error("Logout error:", error)
+      toast({
+        title: "Erro",
+        description: "Falha ao fazer logout",
         variant: "destructive",
       })
     }
@@ -203,10 +238,10 @@ export default function TranslationManager() {
       setEditingId(null)
       setEditingTranslation(null)
 
-      // toast({
-      //   title: "Sucesso",
-      //   description: "Tradução atualizada com sucesso",
-      // })
+      toast({
+        title: "Sucesso",
+        description: "Tradução atualizada com sucesso",
+      })
     } catch (error) {
       console.error("Error updating translation:", error)
       toast({
@@ -377,7 +412,7 @@ export default function TranslationManager() {
             <CardTitle>Gerenciador de Traduções</CardTitle>
             <CardDescription>Gerencie as traduções do seu aplicativo</CardDescription>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 items-center">
             <Button onClick={() => setIsAddDialogOpen(true)} size="sm">
               <PlusCircle className="mr-2 h-4 w-4" />
               Adicionar Tradução
@@ -389,6 +424,10 @@ export default function TranslationManager() {
             <Button onClick={() => setIsImportDialogOpen(true)} variant="outline" size="sm">
               <Upload className="mr-2 h-4 w-4" />
               Importar
+            </Button>
+            <Button onClick={handleLogout} variant="ghost" size="sm" className="ml-2">
+              <LogOut className="mr-2 h-4 w-4" />
+              Sair
             </Button>
           </div>
         </div>
