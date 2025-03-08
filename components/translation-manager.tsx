@@ -36,6 +36,7 @@ import { Badge } from "@/components/ui/badge"
 import { toast } from "@/components/ui/use-toast"
 import { Toaster } from "@/components/ui/toaster"
 import { cleanTranslation } from "@/lib/clean-translation"
+import Link from "next/link"
 
 // Types
 interface Translation {
@@ -413,6 +414,12 @@ export default function TranslationManager() {
             <CardDescription>Gerencie as traduções do seu aplicativo</CardDescription>
           </div>
           <div className="flex flex-wrap gap-2 items-center">
+          <Button asChild variant="outline" size="sm">
+            <Link href="/languages">
+              <Globe className="mr-2 h-4 w-4" />
+              Gerenciar Idiomas
+            </Link>
+          </Button>
             <Button onClick={() => setIsAddDialogOpen(true)} size="sm">
               <PlusCircle className="mr-2 h-4 w-4" />
               Adicionar Tradução
@@ -664,4 +671,3 @@ export default function TranslationManager() {
     </Card>
   )
 }
-

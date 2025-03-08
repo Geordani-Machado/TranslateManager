@@ -1,53 +1,80 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/router"
+import { useTranslation } from "next-i18next"
+import type { Language } from "@/lib/models"
 
-export function useI18n(initialLocale = "en") {
-  const [translations, setTranslations] = useState<Record<string, string>>({})
-  const [isLoading, setIsLoading] = useState(true)
-  const [currentLocale, setCurrentLocale] = useState(initialLocale)
+interface UseI18nReturn {
+  t: (key: string) => string
+  currentLocale: string
+  changeLocale: (locale: string) => void
+  isLoading: boolean
+  translations: any
+  availableLanguages: Language[]
+  defaultLocale: string
+}
 
-  // Fetch translations when locale changes
+const useI18n = (initialLocale = "en"): UseI18nReturn => {
+  const router = useRouter()
+  const { t, i18n, isLoading } = useTranslation()
+  const [translations, setTranslations] = useState<any>({})
+  const [currentLocale, setCurrentLocale] = useState<string>(initialLocale)
+  const [availableLanguages, setAvailableLanguages] = useState<Language[]>([])
+  const [defaultLocale, setDefaultLocale] = useState<string>("pt")
+
   useEffect(() => {
-    async function fetchTranslations() {
-      setIsLoading(true)
+    setCurrentLocale(i18n.language)
+    setTranslations(i18n.store.data[i18n.language])
+  }, [i18n.language, i18n.store.data])
+
+  const changeLocale = (locale: string) => {
+    router.push(router.pathname, router.pathname, { locale })
+    localStorage.setItem("preferred-locale", locale)
+  }
+
+  // Fetch available languages
+  useEffect(() => {
+    async function fetchLanguages() {
       try {
-        const response = await fetch(`/api/i18n/${currentLocale}`)
-        if (!response.ok) throw new Error("Failed to fetch translations")
+        const response = await fetch("/api/languages")
+        if (!response.ok) throw new Error("Failed to fetch languages")
 
         const data = await response.json()
-        setTranslations(data)
+
+        // Filter active languages
+        const activeLanguages = data.filter((lang: Language) => lang.isActive)
+        setAvailableLanguages(activeLanguages)
+
+        // Set default locale
+        const defaultLang = activeLanguages.find((lang: Language) => lang.isDefault)
+        if (defaultLang) {
+          setDefaultLocale(defaultLang.code)
+
+          // If no initial locale was provided, use the default
+          if (initialLocale === "en" && !localStorage.getItem("preferred-locale")) {
+            setCurrentLocale(defaultLang.code)
+          }
+        }
       } catch (error) {
-        console.error("Error loading translations:", error)
-      } finally {
-        setIsLoading(false)
+        console.error("Error loading languages:", error)
       }
     }
 
-    fetchTranslations()
-  }, [currentLocale])
-
-  // Translation function
-  const t = useCallback(
-    (key: string, defaultValue?: string): string => {
-      return translations[key] || defaultValue || key
-    },
-    [translations],
-  )
-
-  // Change language
-  const changeLocale = useCallback((locale: string) => {
-    setCurrentLocale(locale)
-    // Optionally save preference to localStorage or cookie
-    localStorage.setItem("preferred-locale", locale)
+    fetchLanguages()
   }, [])
 
+  // Update the return object to include available languages
   return {
     t,
     currentLocale,
     changeLocale,
     isLoading,
     translations,
+    availableLanguages,
+    defaultLocale,
   }
 }
+
+export default useI18n
 

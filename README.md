@@ -2,7 +2,7 @@
 
 Um gerenciador de traduções para aplicações i18n com integração MongoDB e tradução automática via IA.
 
-![Translation Manager Screenshot](https://imgur.com/r2ijQkv.png)
+![Translation Manager Screenshot](https://sjc.microlink.io/UAor4SPHBrNxvkDEU9uSXs33R6XMdJBJFYM55AKOKxBGnoVjDU-QrcEZ-2QlXW54rV8VG08K_SyyH-6J0Dzo3g.jpeg)
 
 ## Sobre o Projeto
 
@@ -24,8 +24,30 @@ O Translation Manager é uma aplicação web desenvolvida com Next.js que permit
 - MongoDB (local ou Atlas)
 - Conta na Groq para a API de IA (opcional, mas recomendado para tradução automática)
 
+## Personalização
+
+### Gerenciando Idiomas
+
+O sistema agora inclui um gerenciador de idiomas que permite adicionar, editar e remover idiomas suportados:
+
+1. Acesse a página de gerenciamento de idiomas através do botão "Gerenciar Idiomas" no painel principal
+2. Para adicionar um novo idioma:
+   - Clique em "Adicionar Idioma"
+   - Informe o código ISO do idioma (ex: 'fr' para francês)
+   - Informe o nome do idioma (ex: 'Français')
+   - Defina se o idioma estará ativo
+   - Opcionalmente, defina como idioma padrão
+3. Para editar um idioma existente, clique no ícone de edição
+4. Para remover um idioma, clique no ícone de lixeira (não é possível remover o idioma padrão)
+
+Os idiomas adicionados estarão disponíveis automaticamente em todo o sistema, incluindo:
+- No gerenciador de traduções
+- Na API de traduções
+- No exemplo de implementação i18n
+- Na tradução automática via IA
+
 ## Estrutura do Projeto
-```
+\`\`\`bash
 ├── app/                  # Rotas da aplicação (Next.js App Router)
 │   ├── api/              # Endpoints da API
 │   ├── login/            # Página de login
@@ -38,34 +60,4 @@ O Translation Manager é uma aplicação web desenvolvida com Next.js que permit
 │   ├── mongodb.ts        # Conexão com MongoDB
 │   └── clean-translation.ts  # Utilitário para limpar traduções
 └── middleware.ts         # Middleware para autenticação
-```
 
-## Obter Traduções por Idioma
-
-```GET /api/i18n/{locale}```
-
-Exemplo de resposta:
-{
-  "common.buttons.submit": "Submit",
-  "common.buttons.cancel": "Cancel"
-}
-
-## Adicionar Tradução
-
-```POST /api/translations```
-
-Corpo da requisição:
-{
-  "key": "common.buttons.submit",
-  "values": {
-    "pt": "Enviar"
-  }
-}
-
-
-### 1. Clone o repositório
-
-```bash
-git clone https://github.com/seu-usuario/translation-manager.git
-cd translation-manager
-```

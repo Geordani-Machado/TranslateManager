@@ -58,6 +58,8 @@
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.6",
     "zod": "^3.24.1",
+    "i18next": "latest",
+    "react-i18next": "latest",
     "socks": "latest",
     "snappy": "latest",
     "kerberos": "latest",
@@ -65,7 +67,10 @@
     "@mongodb-js/zstd": "latest",
     "mongodb-client-encryption": "latest",
     "@aws-sdk/credential-providers": "latest",
-    "mongodb": "latest"
+    "next-i18next": "latest",
+    "amqplib": "latest",
+    "mongodb": "latest",
+    "uuid": "latest"
   },
   "devDependencies": {
     "@types/node": "^22",
