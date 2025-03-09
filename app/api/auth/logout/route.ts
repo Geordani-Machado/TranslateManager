@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server"
-import { clearSession } from "@/lib/auth"
+import { cookies } from "next/headers"
 
 export async function POST() {
   try {
-    clearSession()
+    // Remover o cookie de autenticação
+    cookies().delete("auth_token")
+
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("Logout error:", error)
-    return NextResponse.json({ error: "Falha ao fazer logout" }, { status: 500 })
+    return NextResponse.json({ error: "Falha ao processar o logout" }, { status: 500 })
   }
 }
 

@@ -1,26 +1,77 @@
 import { NextResponse } from "next/server"
-import { verifyCredentials, createSession } from "@/lib/auth"
+import { cookies } from "next/headers"
+import { connectToDatabase } from "@/lib/mongodb"
+import { verifyPassword } from "@/lib/password"
 
 export async function POST(request: Request) {
   try {
     const { username, password } = await request.json()
 
-    if (!username || !password) {
-      return NextResponse.json({ error: "Usuário e senha são obrigatórios" }, { status: 400 })
+    // Verificar credenciais com as variáveis de ambiente (superadmin)
+    const validUsername = process.env.ADMIN_USERNAME
+    const validPassword = process.env.ADMIN_PASSWORD
+
+    if (validUsername && validPassword && username === validUsername && password === validPassword) {
+      // Login como superadmin
+      const token = Buffer.from(`${username}:admin:${new Date().getTime()}`).toString("base64")
+
+      cookies().set({
+        name: "auth_token",
+        value: token,
+        httpOnly: true,
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 60 * 60 * 24 * 7, // 1 semana
+      })
+
+      return NextResponse.json({
+        success: true,
+        user: {
+          username,
+          name: "Administrador",
+          role: "admin",
+        },
+      })
     }
 
-    // Verify credentials
-    if (!verifyCredentials(username, password)) {
-      return NextResponse.json({ error: "Credenciais inválidas" }, { status: 401 })
+    // Verificar credenciais no banco de dados
+    const { db } = await connectToDatabase()
+    const user = await db.collection("users").findOne({ username })
+
+    if (!user || !user.isActive) {
+      return NextResponse.json({ error: "Usuário não encontrado ou inativo" }, { status: 401 })
     }
 
-    // Create session
-    const token = createSession(username)
+    // Verificar senha
+    const isPasswordValid = verifyPassword(password, user.password, user.salt)
 
-    return NextResponse.json({ success: true })
+    if (!isPasswordValid) {
+      return NextResponse.json({ error: "Senha incorreta" }, { status: 401 })
+    }
+
+    // Criar token com username, role e timestamp
+    const token = Buffer.from(`${user.username}:${user.role}:${new Date().getTime()}`).toString("base64")
+
+    // Definir o cookie de autenticação
+    cookies().set({
+      name: "auth_token",
+      value: token,
+      httpOnly: true,
+      path: "/",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 60 * 60 * 24 * 7, // 1 semana
+    })
+
+    // Retornar informações do usuário (sem senha e salt)
+    const { password: _, salt: __, ...userInfo } = user
+
+    return NextResponse.json({
+      success: true,
+      user: userInfo,
+    })
   } catch (error) {
     console.error("Login error:", error)
-    return NextResponse.json({ error: "Falha na autenticação" }, { status: 500 })
+    return NextResponse.json({ error: "Falha ao processar o login" }, { status: 500 })
   }
 }
 

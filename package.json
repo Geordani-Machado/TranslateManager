@@ -71,7 +71,8 @@
     "next-i18next": "latest",
     "amqplib": "latest",
     "mongodb": "latest",
-    "uuid": "latest"
+    "uuid": "latest",
+    "crypto": "latest"
   },
   "devDependencies": {
     "@types/node": "^22",

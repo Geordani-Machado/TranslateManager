@@ -3,27 +3,37 @@
 import type React from "react"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Lock, AlertCircle } from "lucide-react"
+import { Label } from "@/components/ui/label"
+import { toast } from "@/components/ui/use-toast"
+import { Globe } from "lucide-react"
 
 export default function LoginPage() {
-  const router = useRouter()
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
-  const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirect = searchParams.get("redirect") || "/"
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError(null)
-    setIsLoading(true)
+
+    if (!username || !password) {
+      toast({
+        title: "Erro",
+        description: "Por favor, preencha todos os campos",
+        variant: "destructive",
+      })
+      return
+    }
 
     try {
+      setIsLoading(true)
+
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: {
@@ -33,46 +43,50 @@ export default function LoginPage() {
       })
 
       if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || "Falha na autenticação")
+        const error = await response.json()
+        throw new Error(error.error || "Falha ao fazer login")
       }
 
-      // Redirect to the translation manager
-      router.push("/")
-      router.refresh()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Ocorreu um erro durante o login")
+      toast({
+        title: "Sucesso",
+        description: "Login realizado com sucesso",
+      })
+
+      // Redirecionar para a página original ou para a home
+      router.push(redirect)
+    } catch (error) {
+      console.error("Error during login:", error)
+      toast({
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Falha ao fazer login",
+        variant: "destructive",
+      })
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">Gerenciador de Traduções</CardTitle>
-          <CardDescription className="text-center">
-            Entre com suas credenciais de administrador para acessar o sistema
-          </CardDescription>
+        <CardHeader className="space-y-1 text-center">
+          <div className="flex justify-center mb-2">
+            <Globe className="h-10 w-10 text-primary" />
+          </div>
+          <CardTitle className="text-2xl font-bold">Translation Manager</CardTitle>
+          <CardDescription>Entre com suas credenciais para acessar o sistema</CardDescription>
         </CardHeader>
-        <CardContent>
-          {error && (
-            <Alert variant="destructive" className="mb-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-          <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleLogin}>
+          <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="username">Usuário</Label>
               <Input
                 id="username"
                 type="text"
-                placeholder="admin"
+                placeholder="Digite seu usuário"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                required
+                disabled={isLoading}
               />
             </div>
             <div className="space-y-2">
@@ -80,22 +94,19 @@ export default function LoginPage() {
               <Input
                 id="password"
                 type="password"
+                placeholder="Digite sua senha"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                required
+                disabled={isLoading}
               />
             </div>
+          </CardContent>
+          <CardFooter>
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Autenticando..." : "Entrar"}
+              {isLoading ? "Entrando..." : "Entrar"}
             </Button>
-          </form>
-        </CardContent>
-        <CardFooter className="flex justify-center">
-          <div className="text-sm text-muted-foreground flex items-center">
-            <Lock className="h-3 w-3 mr-1" />
-            Acesso restrito a administradores
-          </div>
-        </CardFooter>
+          </CardFooter>
+        </form>
       </Card>
     </div>
   )

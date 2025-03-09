@@ -2,28 +2,37 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { User, LogOut } from "lucide-react"
+import { LogOut, User, Users } from "lucide-react"
+import { toast } from "@/components/ui/use-toast"
 
 export default function UserInfo() {
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const [userRole, setUserRole] = useState<string | null>(null)
   const router = useRouter()
-  const [username, setUsername] = useState<string | null>(null)
 
   useEffect(() => {
-    // Get username from cookie
-    const getCookieValue = (name: string) => {
-      const value = `; ${document.cookie}`
-      const parts = value.split(`; ${name}=`)
-      if (parts.length === 2) return parts.pop()?.split(";").shift() || null
-      return null
-    }
+    // Tentar obter o papel do usuário do cookie
+    try {
+      const authCookie = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("auth_token="))
+        ?.split("=")[1]
 
-    const user = getCookieValue("auth_user")
-    setUsername(user)
+      if (authCookie) {
+        const [, role] = atob(authCookie).split(":")
+        setUserRole(role)
+      }
+    } catch (error) {
+      console.error("Error parsing auth cookie:", error)
+    }
   }, [])
 
   const handleLogout = async () => {
     try {
+      setIsLoggingOut(true)
+
       const response = await fetch("/api/auth/logout", {
         method: "POST",
       })
@@ -32,23 +41,44 @@ export default function UserInfo() {
         throw new Error("Falha ao fazer logout")
       }
 
+      toast({
+        title: "Logout",
+        description: "Você foi desconectado com sucesso",
+      })
+
+      // Redirecionar para a página de login
       router.push("/login")
-      router.refresh()
     } catch (error) {
-      console.error("Logout error:", error)
+      console.error("Error during logout:", error)
+      toast({
+        title: "Erro",
+        description: "Falha ao fazer logout",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoggingOut(false)
     }
   }
 
-  if (!username) return null
-
   return (
     <div className="flex items-center gap-2">
-      <div className="flex items-center text-sm text-muted-foreground">
-        <User className="h-3 w-3 mr-1" />
-        {username}
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <User className="h-4 w-4" />
+        <span>{userRole === "admin" ? "Administrador" : userRole === "editor" ? "Editor" : "Visualizador"}</span>
       </div>
-      <Button onClick={handleLogout} variant="ghost" size="sm">
-        <LogOut className="h-4 w-4" />
+
+      {userRole === "admin" && (
+        <Button asChild variant="outline" size="sm">
+          <Link href="/users">
+            <Users className="mr-2 h-4 w-4" />
+            Usuários
+          </Link>
+        </Button>
+      )}
+
+      <Button variant="outline" size="sm" onClick={handleLogout} disabled={isLoggingOut}>
+        <LogOut className="mr-2 h-4 w-4" />
+        {isLoggingOut ? "Saindo..." : "Sair"}
       </Button>
     </div>
   )

@@ -1,10 +1,14 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { connectToDatabase } from "@/lib/mongodb"
 import type { Translation } from "@/lib/models"
+import { requireAuth } from "@/lib/auth"
 
 // Obter todas as traduções ou filtrar por idioma
 export async function GET(request: NextRequest) {
   try {
+    // Verificar autenticação para rotas protegidas
+    requireAuth()
+
     const { db } = await connectToDatabase()
     const locale = request.nextUrl.searchParams.get("locale")
 
@@ -34,6 +38,9 @@ export async function GET(request: NextRequest) {
 // Adicionar uma nova tradução
 export async function POST(request: NextRequest) {
   try {
+    // Verificar autenticação para rotas protegidas
+    requireAuth()
+
     const { db } = await connectToDatabase()
     const data = await request.json()
 

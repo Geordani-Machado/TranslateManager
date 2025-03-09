@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { connectToDatabase } from "@/lib/mongodb"
 import type { Language } from "@/lib/models"
+import { requireAuth } from "@/lib/auth"
 
 // Obter todos os idiomas
 export async function GET() {
@@ -37,6 +38,9 @@ export async function GET() {
 // Adicionar um novo idioma
 export async function POST(request: Request) {
   try {
+    // Verificar autenticação para rotas protegidas
+    requireAuth()
+
     const { db } = await connectToDatabase()
     const data = await request.json()
 

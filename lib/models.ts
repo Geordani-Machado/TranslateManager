@@ -29,3 +29,15 @@ export interface TranslationJob {
   error?: string
 }
 
+export interface User {
+  _id?: string
+  username: string
+  password: string // Senha hash, nunca armazenar em texto puro
+  name: string
+  email: string
+  role: "admin" | "editor" | "viewer"
+  createdAt: Date
+  updatedAt: Date
+  isActive: boolean
+}
+
