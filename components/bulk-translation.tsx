@@ -7,74 +7,46 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Progress } from "@/components/ui/progress"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { toast } from "@/components/ui/use-toast"
-import type { Language } from "@/lib/models"
-
-interface TranslationJob {
-  jobId: string
-  sourceLanguage: string
-  targetLanguage: string
-  status: string
-  createdAt: string | Date
-  progress: {
-    completed: number
-    total: number
-    failed: number
-  }
-  error?: string
-}
+import type { TranslationJob } from "@/lib/models"
 import { Loader2, CheckCircle2, RefreshCw, XCircle } from "lucide-react"
 
-export default function BulkTranslation() {
-  const [languages, setLanguages] = useState<Language[]>([])
+// Importar o hook
+import { useLanguages } from "@/hooks/use-languages"
+
+export function BulkTranslation() {
   const [sourceLanguage, setSourceLanguage] = useState<string>("")
   const [targetLanguage, setTargetLanguage] = useState<string>("")
-  const [isLoading, setIsLoading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [activeJob, setActiveJob] = useState<TranslationJob | null>(null)
   const [jobHistory, setJobHistory] = useState<TranslationJob[]>([])
 
-  // Carregar idiomas e histórico de trabalhos
+  // Usar o hook de idiomas
+  const { activeLanguages, isLoading: isLoadingLanguages } = useLanguages()
+
+  // Carregar histórico de trabalhos
   useEffect(() => {
-    fetchLanguages()
     fetchJobHistory()
 
     // Verificar trabalhos ativos a cada 5 segundos
     const interval = setInterval(() => {
       if (activeJob && (activeJob.status === "pending" || activeJob.status === "processing")) {
-        fetchJobStatus(String(activeJob.jobId))
+        fetchJobStatus(activeJob.jobId)
       }
     }, 5000)
 
     return () => clearInterval(interval)
   }, [activeJob])
 
-  const fetchLanguages = async () => {
-    try {
-      setIsLoading(true)
-      const response = await fetch("/api/languages")
-      if (!response.ok) throw new Error("Failed to fetch languages")
-      const data = await response.json()
-
-      // Filtrar apenas idiomas ativos
-      const activeLanguages = data.filter((lang: Language) => lang.isActive)
-      setLanguages(activeLanguages)
-
+  // Adicionar um useEffect para definir o idioma de origem quando os idiomas são carregados:
+  useEffect(() => {
+    if (activeLanguages.length > 0) {
       // Definir idioma padrão como origem
-      const defaultLang = activeLanguages.find((lang: Language) => lang.isDefault)
-      if (defaultLang) {
+      const defaultLang = activeLanguages.find((lang) => lang.isDefault)
+      if (defaultLang && !sourceLanguage) {
         setSourceLanguage(defaultLang.code)
       }
-    } catch (error) {
-      console.error("Error fetching languages:", error)
-      toast({
-        title: "Erro",
-        description: "Falha ao carregar idiomas",
-        variant: "destructive",
-      })
-    } finally {
-      setIsLoading(false)
     }
-  }
+  }, [activeLanguages, sourceLanguage])
 
   const fetchJobHistory = async () => {
     try {
@@ -104,7 +76,7 @@ export default function BulkTranslation() {
       setActiveJob(data)
 
       // Atualizar o histórico de trabalhos
-      setJobHistory((prev) => prev.map((j) => (j.jobId === jobId ? data : j)))
+      setJobHistory((prev) => prev.map((job) => (job.jobId === jobId ? data : job)))
 
       // Se o trabalho foi concluído ou falhou, atualizar a lista
       if (data.status === "completed" || data.status === "failed") {
@@ -202,8 +174,9 @@ export default function BulkTranslation() {
     }
   }
 
+  // Atualizar a função getLanguageName:
   const getLanguageName = (code: string) => {
-    const language = languages.find((lang) => lang.code === code)
+    const language = activeLanguages.find((lang) => lang.code === code)
     return language ? language.name : code.toUpperCase()
   }
 
@@ -255,13 +228,13 @@ export default function BulkTranslation() {
             <Select
               value={sourceLanguage}
               onValueChange={setSourceLanguage}
-              disabled={isLoading || isSubmitting || !!activeJob}
+              disabled={isLoadingLanguages || isSubmitting || !!activeJob}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o idioma de origem" />
               </SelectTrigger>
               <SelectContent>
-                {languages.map((language) => (
+                {activeLanguages.map((language) => (
                   <SelectItem key={`source-${language.code}`} value={language.code}>
                     {language.name} ({language.code.toUpperCase()})
                   </SelectItem>
@@ -275,13 +248,13 @@ export default function BulkTranslation() {
             <Select
               value={targetLanguage}
               onValueChange={setTargetLanguage}
-              disabled={isLoading || isSubmitting || !!activeJob}
+              disabled={isLoadingLanguages || isSubmitting || !!activeJob}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o idioma de destino" />
               </SelectTrigger>
               <SelectContent>
-                {languages.map((language) => (
+                {activeLanguages.map((language) => (
                   <SelectItem
                     key={`target-${language.code}`}
                     value={language.code}
@@ -372,7 +345,7 @@ export default function BulkTranslation() {
       <CardFooter>
         <Button
           onClick={startBulkTranslation}
-          disabled={isLoading || isSubmitting || !sourceLanguage || !targetLanguage || !!activeJob}
+          disabled={isLoadingLanguages || isSubmitting || !sourceLanguage || !targetLanguage || !!activeJob}
           className="w-full"
         >
           {isSubmitting ? (
@@ -388,4 +361,6 @@ export default function BulkTranslation() {
     </Card>
   )
 }
+
+export default BulkTranslation
 

@@ -20,7 +20,14 @@ export async function GET() {
       return NextResponse.json(defaultLanguages)
     }
 
-    return NextResponse.json(languages)
+    // Garantir que os idiomas estejam ordenados (padrão primeiro, depois alfabeticamente)
+    const sortedLanguages = [...languages].sort((a, b) => {
+      if (a.isDefault) return -1
+      if (b.isDefault) return 1
+      return a.name.localeCompare(b.name)
+    })
+
+    return NextResponse.json(sortedLanguages)
   } catch (error) {
     console.error("Error fetching languages:", error)
     return NextResponse.json({ error: "Failed to fetch languages" }, { status: 500 })

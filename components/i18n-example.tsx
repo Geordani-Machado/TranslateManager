@@ -7,22 +7,30 @@ import { Globe } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import type { Language } from "@/lib/models"
+
+// Importar o hook e a configuração do i18n
+import { useLanguages } from "@/hooks/use-languages"
+import "../lib/i18n" // Importar a configuração do i18n
 
 interface Translation {
   [key: string]: string
 }
 
-const I18nExample = () => {
+export function I18nExample() {
   const { t, i18n } = useTranslation()
-  const [currentLocale, setCurrentLocale] = useState(i18n.language)
+  const [currentLocale, setCurrentLocale] = useState<string>(i18n.language || "pt")
   const [translations, setTranslations] = useState<Translation>({})
 
-  const [availableLanguages, setAvailableLanguages] = useState<Language[]>([])
+  // Usar o hook de idiomas
+  const { activeLanguages, isLoading: isLoadingLanguages } = useLanguages()
   const [availableLocales, setAvailableLocales] = useState<string[]>(["pt", "en", "es"])
 
   const changeLanguage = (locale: string) => {
     setCurrentLocale(locale)
+    // Mudar o idioma do i18n
+    if (i18n.changeLanguage) {
+      i18n.changeLanguage(locale)
+    }
   }
 
   const fetchTranslations = async (locale: string) => {
@@ -33,41 +41,31 @@ const I18nExample = () => {
       }
       const data = await response.json()
       setTranslations(data)
-      i18n.changeLanguage(locale)
+
+      // Remover a chamada para i18n.changeLanguage aqui
     } catch (error) {
       console.error("Error fetching translations:", error)
     }
   }
 
-  // Carregar idiomas disponíveis
-  const fetchAvailableLanguages = async () => {
-    try {
-      const response = await fetch("/api/languages")
-      if (!response.ok) throw new Error("Failed to fetch languages")
-      const data = await response.json()
-
-      // Filtrar apenas idiomas ativos
-      const activeLanguages = data.filter((lang: Language) => lang.isActive)
-      setAvailableLanguages(activeLanguages)
-
+  // Atualizar o useEffect para usar activeLanguages:
+  useEffect(() => {
+    if (activeLanguages.length > 0) {
       // Extrair códigos de idioma
-      const locales = activeLanguages.map((lang: Language) => lang.code)
+      const locales = activeLanguages.map((lang) => lang.code)
       setAvailableLocales(locales)
 
       // Definir o idioma padrão como selecionado
-      const defaultLang = activeLanguages.find((lang: Language) => lang.isDefault)
-      if (defaultLang && !currentLocale) {
-        setCurrentLocale(defaultLang.code)
+      const defaultLang = activeLanguages.find((lang) => lang.isDefault)
+
+      // Se o idioma atual não estiver mais disponível, mudar para o padrão
+      if (!locales.includes(currentLocale) && defaultLang) {
+        changeLanguage(defaultLang.code)
       }
-    } catch (error) {
-      console.error("Error fetching languages:", error)
     }
-  }
+  }, [activeLanguages, currentLocale])
 
-  useEffect(() => {
-    fetchAvailableLanguages()
-  }, [])
-
+  // Atualizar o useEffect para carregar traduções quando o idioma mudar:
   useEffect(() => {
     if (currentLocale) {
       fetchTranslations(currentLocale)
@@ -85,14 +83,15 @@ const I18nExample = () => {
           <p>
             {t("greeting", { ns: "example" })}, {t("name", { ns: "example" })}!
           </p>
-          <p>{translations.welcome}</p>
+          <p>{translations.welcome || "Bem-vindo ao sistema de traduções"}</p>
           <Button onClick={() => alert(t("alertMessage", { ns: "example" }))}>
             {t("showAlert", { ns: "example" })}
           </Button>
         </div>
         <Tabs defaultValue={currentLocale} className="w-[400px]" onValueChange={changeLanguage}>
+          {/* Atualizar o renderizador de TabsList: */}
           <TabsList>
-            {availableLanguages.map((lang) => (
+            {activeLanguages.map((lang) => (
               <TabsTrigger key={lang.code} value={lang.code} className="flex items-center gap-1">
                 <Globe className="h-3 w-3" />
                 {lang.code.toUpperCase()}

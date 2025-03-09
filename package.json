@@ -67,6 +67,7 @@
     "@mongodb-js/zstd": "latest",
     "mongodb-client-encryption": "latest",
     "@aws-sdk/credential-providers": "latest",
+    "typescript": "latest",
     "next-i18next": "latest",
     "amqplib": "latest",
     "mongodb": "latest",

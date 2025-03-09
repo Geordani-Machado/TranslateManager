@@ -84,6 +84,8 @@ export default function LanguageManager() {
         title: "Sucesso",
         description: "Idioma adicionado com sucesso",
       })
+
+      notifyLanguageChange()
     } catch (error) {
       console.error("Error adding language:", error)
       toast({
@@ -120,6 +122,8 @@ export default function LanguageManager() {
         title: "Sucesso",
         description: "Idioma atualizado com sucesso",
       })
+
+      notifyLanguageChange()
     } catch (error) {
       console.error("Error updating language:", error)
       toast({
@@ -148,6 +152,8 @@ export default function LanguageManager() {
         title: "Sucesso",
         description: "Idioma excluído com sucesso",
       })
+
+      notifyLanguageChange()
     } catch (error) {
       console.error("Error deleting language:", error)
       toast({
@@ -168,6 +174,13 @@ export default function LanguageManager() {
   const cancelEditing = () => {
     setEditingCode(null)
     setEditingLanguage(null)
+  }
+
+  // Função para notificar sobre mudanças nos idiomas
+  const notifyLanguageChange = () => {
+    // Criar e disparar um evento personalizado
+    const event = new CustomEvent("languagesUpdated", { detail: { timestamp: new Date() } })
+    window.dispatchEvent(event)
   }
 
   return (

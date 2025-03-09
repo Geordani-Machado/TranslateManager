@@ -1,5 +1,5 @@
 import { Suspense } from "react"
-import BulkTranslation from "@/components/bulk-translation"
+import { BulkTranslation } from "@/components/bulk-translation"
 import UserInfo from "@/components/user-info"
 import { Skeleton } from "@/components/ui/skeleton"
 
