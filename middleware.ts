@@ -1,54 +1,53 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
+const locales = ["en", "pt", "es", "fr"]
+const defaultLocale = "pt"
+let allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",") || []
+
 export function middleware(request: NextRequest) {
-  // Verificar se o usuário está autenticado
-  const authCookie = request.cookies.get("auth_token")
+  const { pathname } = request.nextUrl
+  const origin = request.headers.get('origin') || ''
 
-  // Rotas públicas que não precisam de autenticação
-  const publicRoutes = ["/login", "/api/auth/login"]
-  const isPublicRoute = publicRoutes.some((route) => request.nextUrl.pathname.startsWith(route))
+  // Criar a resposta uma única vez
+  let response = NextResponse.next()
 
-  // Se não estiver autenticado e não for uma rota pública, redirecionar para o login
-  if (!authCookie && !isPublicRoute && !request.nextUrl.pathname.startsWith("/api/translations")) {
-    const loginUrl = new URL("/login", request.url)
-    loginUrl.searchParams.set("redirect", request.nextUrl.pathname)
-    return NextResponse.redirect(loginUrl)
+  // Aplicar CORS apenas para origens permitidas
+  if (allowedOrigins.includes(origin)) {
+    response.headers.set('Access-Control-Allow-Origin', origin)
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-CSRF-Token')
+    response.headers.set('Access-Control-Allow-Credentials', 'true')
   }
 
-  // Para rotas de API, adicionar cabeçalhos CORS
-  if (request.nextUrl.pathname.startsWith("/api/")) {
-    const response = NextResponse.next()
-
-    // Origem permitida (pode ser mais de uma separada por vírgula, se necessário)
-    const allowedOrigin = "https://anotati.com"
-    const origin = request.headers.get("origin")
-
-    if (origin && origin === allowedOrigin) {
-      response.headers.set("Access-Control-Allow-Origin", origin)
-      response.headers.set("Access-Control-Allow-Credentials", "true")
-    }
-
-    response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-    response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-
-    // Para requisições OPTIONS (preflight), retornar 200 OK
-    if (request.method === "OPTIONS") {
-      return new NextResponse(null, {
-        status: 200,
-        headers: response.headers,
-      })
-    }
-
-    return response
+  // Lidar com pré-voo CORS (OPTIONS)
+  if (request.method === 'OPTIONS') {
+    return new NextResponse(null, {
+      status: 200,
+      headers: Object.fromEntries(response.headers),
+    })
   }
 
-  return NextResponse.next()
+  // Lógica de localização (apenas para rotas não-API)
+  if (!pathname.startsWith('/api')) {
+    let locale = request.cookies.get("NEXT_LOCALE")?.value
+    
+    if (!locale || !locales.includes(locale)) {
+      locale = defaultLocale
+    }
+
+    response.cookies.set("NEXT_LOCALE", locale, {
+      path: "/",
+      maxAge: 60 * 60 * 24 * 365,
+    })
+  }
+
+  return response
 }
 
-// Configurar quais rotas o middleware deve ser executado
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|public).*)",
+    // Inclui todas as rotas exceto arquivos estáticos
+    "/((?!_next|_vercel|.*\\..*).*)",
   ],
 }
