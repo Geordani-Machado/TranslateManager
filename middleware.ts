@@ -6,7 +6,7 @@ export function middleware(request: NextRequest) {
   const response = NextResponse.next();
 
   // Adicionar CORS para todas as requisições que vêm da origem permitida
-  const allowedOrigin = process.env.ALLOWED_ORIGIN || "http://localhost:3000";
+  const allowedOrigin = process.env.ALLOWED_ORIGINS || "http://localhost:3000";
 
   if (request.headers.get('origin') === allowedOrigin) {
     response.headers.set('Access-Control-Allow-Origin', allowedOrigin);
