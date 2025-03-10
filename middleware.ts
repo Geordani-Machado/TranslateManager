@@ -20,14 +20,17 @@ export function middleware(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith("/api/")) {
     const response = NextResponse.next()
 
-    // Obter a origem da requisição
-    const origin = request.headers.get("origin") || "*"
+    // Origem permitida (pode ser mais de uma separada por vírgula, se necessário)
+    const allowedOrigin = "https://anotati.com"
+    const origin = request.headers.get("origin")
 
-    // Adicionar cabeçalhos CORS
-    response.headers.set("Access-Control-Allow-Origin", origin)
+    if (origin && origin === allowedOrigin) {
+      response.headers.set("Access-Control-Allow-Origin", origin)
+      response.headers.set("Access-Control-Allow-Credentials", "true")
+    }
+
     response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
     response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-    response.headers.set("Access-Control-Allow-Credentials", "true")
 
     // Para requisições OPTIONS (preflight), retornar 200 OK
     if (request.method === "OPTIONS") {
@@ -46,14 +49,6 @@ export function middleware(request: NextRequest) {
 // Configurar quais rotas o middleware deve ser executado
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     */
     "/((?!_next/static|_next/image|favicon.ico|public).*)",
   ],
 }
-
