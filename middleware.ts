@@ -3,24 +3,21 @@ import type { NextRequest } from "next/server"
 
 export function middleware(request: NextRequest) {
 
-
-  if (request.method === 'OPTIONS') {
-    const response = new NextResponse(null, { status: 200 });
-    response.headers.set('Access-Control-Allow-Origin', '*');
-    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    return response;
-  }
-  
   const response = NextResponse.next();
 
-  // Adicionar CORS apenas para rotas da API
-  if (request.nextUrl.pathname.startsWith('/api')) {
-    response.headers.set('Access-Control-Allow-Origin', '*');
+  // Adicionar CORS para todas as requisições que vêm da origem permitida
+  const allowedOrigin = process.env.ALLOWED_ORIGIN || "http://localhost:3000";
+
+  if (request.headers.get('origin') === allowedOrigin) {
+    response.headers.set('Access-Control-Allow-Origin', allowedOrigin);
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   }
 
+  // Tratamento de requisições OPTIONS (Pré-vôo do CORS)
+  if (request.method === 'OPTIONS') {
+    return new NextResponse(null, { status: 204, headers: response.headers });
+  }
 
   // Verificar se o usuário está autenticado
   const authCookie = request.cookies.get("auth_token")
@@ -36,20 +33,12 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  return NextResponse.next()
+  return response;
 }
 
 // Configurar quais rotas o middleware deve ser executado
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     */
     "/((?!_next/static|_next/image|favicon.ico|public).*)",
   ],
 }
-
