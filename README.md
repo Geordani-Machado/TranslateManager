@@ -23,6 +23,7 @@ O Translation Manager é uma aplicação web desenvolvida com Next.js que permit
 - Node.js 18 ou superior
 - MongoDB (local ou Atlas)
 - Conta na Groq para a API de IA (opcional, mas recomendado para tradução automática)
+- Rabbitmq (Opcional mas recomendado para traduções em massa)
 
 ## Personalização
 
@@ -47,7 +48,7 @@ Os idiomas adicionados estarão disponíveis automaticamente em todo o sistema, 
 - Na tradução automática via IA
 
 ## Estrutura do Projeto
-\`\`\`bash
+```bash
 ├── app/                  # Rotas da aplicação (Next.js App Router)
 │   ├── api/              # Endpoints da API
 │   ├── login/            # Página de login
@@ -60,4 +61,4 @@ Os idiomas adicionados estarão disponíveis automaticamente em todo o sistema, 
 │   ├── mongodb.ts        # Conexão com MongoDB
 │   └── clean-translation.ts  # Utilitário para limpar traduções
 └── middleware.ts         # Middleware para autenticação
-
+```
