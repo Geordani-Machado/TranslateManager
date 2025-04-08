@@ -14,7 +14,7 @@ export function middleware(request: NextRequest) {
 
   // Aplicar CORS apenas para origens permitidas
   if (allowedOrigins.includes(origin)) {
-    response.headers.set('Access-Control-Allow-Origin', origin + '*')
+    response.headers.set('Access-Control-Allow-Origin', '*')
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
     response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-CSRF-Token')
     response.headers.set('Access-Control-Allow-Credentials', 'true')
