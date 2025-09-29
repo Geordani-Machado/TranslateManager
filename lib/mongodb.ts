@@ -1,6 +1,6 @@
 import { MongoClient, type Db } from "mongodb";
 
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017";
+const MONGODB_URI = process.env.MONGODB_URI;
 const MONGODB_DB = process.env.MONGODB_DB;
 
 if (!MONGODB_URI) {
@@ -30,7 +30,7 @@ export async function connectToDatabase(): Promise<{ db: Db; client: MongoClient
   }
 
   if (!cached.promise) {
-    cached.promise = MongoClient.connect(MONGODB_URI).then((client) => {
+    cached.promise = MongoClient.connect(MONGODB_URI as string).then((client) => {
       return {
         client,
         db: client.db(MONGODB_DB),
