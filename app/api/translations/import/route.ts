@@ -7,8 +7,11 @@ export async function POST(request: Request) {
     const { db } = await connectToDatabase()
     const data = await request.json()
 
+    console.log("Dados recebidos na API de importação:", data)
+
     // Handle locale-specific import format
     if (data.locale && data.translations) {
+      console.log("Processando formato com locale específico")
       const locale = data.locale
       const translations = data.translations
 
@@ -62,6 +65,7 @@ export async function POST(request: Request) {
 
     // Handle standard import format (array of translation objects)
     if (Array.isArray(data.translations)) {
+      console.log("Processando formato padrão (array de objetos)")
       const translations = data.translations
 
       // Validate all translations
@@ -115,6 +119,56 @@ export async function POST(request: Request) {
 
     // Handle flat key-value format
     if (typeof data === "object" && !Array.isArray(data)) {
+      console.log("Processando formato flat key-value")
+
+      // Check if it's a locale-wrapped format like { "pt": { "key": "value" } }
+      const locales = Object.keys(data)
+      if (locales.length === 1 && typeof data[locales[0]] === "object" && !Array.isArray(data[locales[0]])) {
+        console.log("Detectado formato com locale wrapper")
+        const locale = locales[0]
+        const translations = data[locale]
+        const results = []
+
+        for (const [key, value] of Object.entries(translations)) {
+          if (typeof value !== "string") continue
+
+          // Check if translation already exists
+          const existingTranslation = await db.collection("translations").findOne({
+            key,
+          })
+
+          if (existingTranslation) {
+            // Update existing translation
+            const updatedValues = { ...existingTranslation.values }
+            updatedValues[locale] = cleanTranslation(value)
+
+            await db.collection("translations").updateOne({ key }, { $set: { values: updatedValues } })
+
+            results.push({
+              key,
+              action: "updated",
+            })
+          } else {
+            // Insert new translation
+            await db.collection("translations").insertOne({
+              key,
+              values: { [locale]: cleanTranslation(value) },
+            })
+
+            results.push({
+              key,
+              action: "inserted",
+            })
+          }
+        }
+
+        return NextResponse.json({
+          success: true,
+          results,
+        })
+      }
+
+      // Original flat format handling
       const locale = "pt" // Default to Portuguese for flat imports
       const results = []
 
@@ -157,6 +211,7 @@ export async function POST(request: Request) {
       })
     }
 
+    console.log("Nenhum formato de importação reconhecido")
     return NextResponse.json({ error: "Invalid import format" }, { status: 400 })
   } catch (error) {
     console.error("Error importing translations:", error)
