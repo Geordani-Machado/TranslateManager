@@ -41,7 +41,7 @@ async function translateText(text: string, sourceLanguage: string, targetLanguag
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: "llama3-8b-8192",
+        model: "openai/gpt-oss-120b",
         messages: [{ role: "user", content: prompt }],
         max_tokens: 150,
         temperature: 0.7,
